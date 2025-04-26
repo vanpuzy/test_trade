@@ -658,23 +658,309 @@ const findRetestForBuy = async (coinName2, highTimeRequest, lowTimeRequest, mulC
         if (idexForBuy > 0
             && (idexForBuy < 30)
         ) {
-            console.log(" =============== " + coinName2 + " lowtime " + lowTimeRequest + " idx " + idexForBuy
+            console.log(" =============== buy " + coinName2 + " lowtime " + lowTimeRequest + " idx " + idexForBuy
                 + " highTime " + highTimeRequest + " idxTouch " + nearestUnderEma50AndBBLow
 
             )
-            
+
             if (idexForBuy < 3) {
-                bot.sendMessage(chatId, coinName2 + " lowtime " + lowTimeRequest + " idx " + idexForBuy
+                bot.sendMessage(chatId, coinName2 + "buy lowtime " + lowTimeRequest + " idx " + idexForBuy
                     + " highTime " + highTimeRequest + " idxTouch " + nearestUnderEma50AndBBLow)
             }
         }
-
     }
     catch (e) {
         console.log("error 3 " + e + " " + coinName2)
         console.error("Dòng lỗi:", e.stack);
     }
 }
+const findRetestForSell = async (coinName2, highTimeRequest, lowTimeRequest, mulCoeff) => {
+
+    // console.log("coinname : " + coinName2 + "  timeRequest " + timeRequest)
+    try {
+        var priceDatas = await getCandlesticks(coinName2, highTimeRequest);//await client.futuresCandles({ symbol: coinName2, limit: 1000, interval: timeRequest })
+        // console.log(" priceDatas "+ priceDatas)
+        if (priceDatas.length == 0) {
+            return;
+        }
+        // var tpCheck = await getTp(coinName2,getHigherTimeRequest(timeRequest))
+        // console.log(" tpCheck "+ tpCheck)
+        var openPrices = []
+        var closePrices = []
+
+        var last10Prices = []
+        var last5Prices = []
+
+        //   console.log(" priceDatas[priceDatas.length-1].closeTime   "+ typeof( priceDatas[priceDatas.length-1].close));
+
+        // console.log(coinName2+ " priceDatas " +  "  timeRequest "+ timeRequest)
+        for (var i = 0; i < priceDatas.length; i++) {
+            //  console.log(coinName2+ "   "+i + "    priceDatas " + priceDatas[i].open)
+            closePrices.push(Number(priceDatas[i].close))
+            openPrices.push(Number(priceDatas[i].open))
+        }
+
+        var ema10 = EMA.calculate({ period: 10, values: closePrices })
+        var ema20 = EMA.calculate({ period: 20, values: closePrices })
+        var ema34 = EMA.calculate({ period: 34, values: closePrices })
+        var ema50 = EMA.calculate({ period: 50, values: closePrices })
+        var ema89 = EMA.calculate({ period: 89, values: closePrices })
+        var ema200 = EMA.calculate({ period: 200, values: closePrices })
+
+        var inputRSI = { values: closePrices, period: 14 }
+        var rsiValues = RSI.calculate(inputRSI)
+
+        var macdInput = {
+            values: closePrices,
+            fastPeriod: 12,
+            slowPeriod: 26,
+            signalPeriod: 9,
+            SimpleMAOscillator: false,
+            SimpleMASignal: false
+        }
+
+        var macdData2 = MACD.calculate(macdInput)
+
+        var bbInput = {
+            period: 20,
+            values: closePrices,
+            stdDev: 2
+        }
+        const bbResult = bb.calculate(bbInput)
+        var resultLength = bbResult.length
+
+        if (ema50[ema50.length - 1] > ema89[ema89.length - 1]) {
+            return
+        }
+
+        // tim cay nen dau tien sau khi ema50 over ema89 va thoa man
+        /**
+         * Cay nen nho hon ema50 > ema89, va dong thoi cham bb duoi nhung ko dc dong cua cua ema89
+         * sau do cham lai bb tren
+         * diem cham bb tren nay phai >= bb truoc cay nen tim luc nay
+         * Vao khung nen nho hon tim diem vao lenh
+         */
+
+        var nearestEma50OverEma89 = -1
+
+        for (var i = 0; i < ema89.length - 1; i++) {
+            if ((ema50[ema50.length - 1 - i] < ema89[ema89.length - 1 - i]) && (ema50[ema50.length - 1 - (i + 1)] > ema89[ema89.length - 1 - (i + 1)])) {
+                nearestEma50OverEma89 = i
+                break
+            }
+        }
+
+        // tim cay nen ma nho hon ema50 va bb duoi, > ema89, 
+
+
+        var nearestOverEma50AndBBHigh = -1
+        var candleUnderBBUpBefore = -1
+        var candleUnderBBUpAfter = -1
+        for (var i = 0; i < nearestEma50OverEma89; i++) {
+            if ((priceDatas[priceDatas.length - 1 - i].high > ema50[ema50.length - 1 - i])
+                && (priceDatas[priceDatas.length - 1 - i].close < ema89[ema89.length - 1 - i])
+                && (priceDatas[priceDatas.length - 1 - i].high > bbResult[bbResult.length - 1 - i].upper)
+            ) {
+                candleUnderBBUpBefore = -1
+                candleUnderBBUpAfter = -1
+                //   console.log(coinName2 + " time "+ highTimeRequest + " nearestUnderEma50AndBBLow "+ nearestUnderEma50AndBBLow)
+
+                for (var j = i; j < nearestEma50OverEma89; j++) {
+                    if ((priceDatas[priceDatas.length - 1 - j].close < bbResult[bbResult.length - 1 - j].lower)) {
+                        // tot nhat tim cay nen dau tien trc do
+                        candleUnderBBUpBefore = j
+                        break
+                    }
+                }
+
+
+                // cay bb sau phai > cay bb r
+                // tu cay nen nay den cay nen bbUp ko dc co cay nen nao duoi ema89
+                for (var j = 0; j < i; j++) {
+                    if (priceDatas[priceDatas.length - 1 - j].close > ema89[ema89.length - 1 - j]) {
+                        return
+                    }
+                    if (candleUnderBBUpBefore < 0) {
+                        break
+                    }
+                    if ((priceDatas[priceDatas.length - 1 - j].close < bbResult[bbResult.length - 1 - j].lower)
+                        //   && (priceDatas[priceDatas.length - 1 - j].close >= priceDatas[priceDatas.length - 1 - candleAboveBBUpBefore].close)
+                    ) {
+                        candleUnderBBUpAfter = j
+
+                    }
+                }
+
+                if (candleUnderBBUpBefore > 0) {
+                    if (priceDatas[priceDatas.length - 1 - candleUnderBBUpBefore].close <= priceDatas[priceDatas.length - 1 - candleUnderBBUpBefore].close) {
+
+                    } else {
+                        return
+                    }
+                }
+                nearestOverEma50AndBBHigh = i
+            }
+        }
+
+
+        // console.log(coinName2 + " time " + highTimeRequest + " candleAboveBBUpAfter " + candleAboveBBUpAfter)
+        if (nearestOverEma50AndBBHigh < 0)
+            return
+
+        // tim diem truoc va sau nearestUnderEma50AndBBLow ma cham bb
+
+
+
+        var mid_priceDatas = await getCandlesticks(coinName2, lowTimeRequest);//await client.futuresCandles({ symbol: coinName2, limit: 1000, interval: timeRequest })
+
+        if (mid_priceDatas.length == 0) {
+            return;
+        }
+        // var tpCheck = await getTp(coinName2,getHigherTimeRequest(timeRequest))
+        // console.log(" tpCheck "+ tpCheck)
+        var mid_openPrices = []
+        var mid_closePrices = []
+
+        var last10Prices = []
+        var last5Prices = []
+
+        //   console.log(" priceDatas[priceDatas.length-1].closeTime   "+ typeof( priceDatas[priceDatas.length-1].close));
+
+        // console.log(coinName2+ " priceDatas " +  "  timeRequest "+ timeRequest)
+        for (var i = 0; i < mid_priceDatas.length; i++) {
+            //  console.log(coinName2+ "   "+i + "    priceDatas " + priceDatas[i].open)
+            mid_closePrices.push(Number(mid_priceDatas[i].close))
+            mid_openPrices.push(Number(mid_priceDatas[i].open))
+        }
+
+        var mid_ema10 = EMA.calculate({ period: 10, values: mid_closePrices })
+        var mid_ema20 = EMA.calculate({ period: 20, values: mid_closePrices })
+        var mid_ema34 = EMA.calculate({ period: 34, values: mid_closePrices })
+        var mid_ema50 = EMA.calculate({ period: 50, values: mid_closePrices })
+        var mid_ema89 = EMA.calculate({ period: 89, values: mid_closePrices })
+        var mid_ema200 = EMA.calculate({ period: 200, values: mid_closePrices })
+
+        var mid_macdInput = {
+            values: mid_closePrices,
+            fastPeriod: 12,
+            slowPeriod: 26,
+            signalPeriod: 9,
+            SimpleMAOscillator: false,
+            SimpleMASignal: false
+        }
+
+        var mid_macdData2 = MACD.calculate(mid_macdInput)
+
+
+        //den cay nen be hon, cu > ema89 va co cay Engulfing la om
+        if (mid_ema50[mid_ema50.length - 1] > mid_ema89[mid_ema89.length - 1]) {
+            return
+        }
+
+        var mid_nearestEma50OverEma89 = -1
+        for (var i = 0; i < nearestOverEma50AndBBHigh * mulCoeff; i++) {
+            if ((mid_ema50[mid_ema50.length - 1 - i] < mid_ema89[mid_ema89.length - 1 - i])
+                && ((mid_ema50[mid_ema50.length - 1 - (i + 1)] > mid_ema89[mid_ema89.length - 1 - (i + 1)]))) {
+                    mid_nearestEma50OverEma89 = i
+            }
+        }
+        if (mid_nearestEma50OverEma89 < 0) {
+            return
+        }
+
+
+        // tim diem cham lại ema89
+
+
+        // var hasCandleUnderMidEma89 = false
+        // var firstTouchMidEma89 = -1
+        // for (var i = 0; i < Math.min(mid_nearestEma50UnderEma89, candleAboveBBUpAfter * mulCoeff); i++) {
+        //     if (mid_priceDatas[mid_priceDatas.length - 1 - i].close < mid_ema50[mid_ema50.length - 1 - i]) {
+        //         hasCandleUnderMidEma89 = true
+        //         firstTouchMidEma89 = i
+        //     }
+        // }
+
+        // console.log(" firstTouchMidEma89 " + firstTouchMidEma89 + " Math.min(mid_nearestEma50UnderEma89, candleAboveBBUpAfter * mulCoeff) "+ Math.min(mid_nearestEma50UnderEma89, candleAboveBBUpAfter * mulCoeff))
+
+        var idexForSell = -1
+        // if(hasCandleUnderMidEma89 == true)
+        // {
+        //     for(var i = 0; i < firstTouchMidEma89; i++)
+        //     {
+        //         if(isBullishEngulfing(mid_priceDatas[mid_closePrices.length-1-(i+1)],mid_priceDatas[mid_closePrices.length-1-i])
+        //         && (mid_priceDatas[mid_closePrices.length-1-i].close > mid_ema89[mid_ema89.length-1-i])
+        //         )
+        //         {
+
+        //             for(var j = i ; j < nearestUnderEma50AndBBLow* mulCoeff;j++)
+        //             {
+        //                 if(mid_priceDatas[mid_priceDatas.length-1-j].close < priceDatas[priceDatas.length-1-nearestUnderEma50AndBBLow].low)
+        //                 {
+        //                     return
+        //                 }
+        //             }
+        //             // tu cay nen 0 nay den cay nen nay ko co cay nao gia dong cua < cay  nearestUnderEma50AndBBLow cua nen cao hon
+        //             idexForBuy = i
+        //         }
+        //     }
+        // }
+
+        if (candleUnderBBUpAfter < 0) {
+            return
+        }
+        //   console.log(coinName2 + " candleAboveBBUpAfter "+ candleAboveBBUpAfter)
+        // if (hasCandleUnderMidEma89 == true)
+        {
+            for (var i = 0; i < candleUnderBBUpAfter * mulCoeff; i++) {
+                if (
+                    //    isBullishEngulfing(mid_priceDatas[mid_closePrices.length - 1 - (i + 1)], mid_priceDatas[mid_closePrices.length - 1 - i])
+                    //   && 
+                    (mid_macdData2[mid_macdData2.length - 1 - i].MACD < mid_macdData2[mid_macdData2.length - 1 - i].signal)
+                    && (mid_macdData2[mid_macdData2.length - 1 - (i + 1)].MACD > mid_macdData2[mid_macdData2.length - 1 - (i + 1)].signal)
+                ) {
+
+                    //  console.log(" mid_macdData2 cut " + i)
+                    for (var j = i; j < nearestOverEma50AndBBHigh * mulCoeff; j++) {
+                        if (mid_priceDatas[mid_priceDatas.length - 1 - j].close > priceDatas[priceDatas.length - 1 - nearestOverEma50AndBBHigh].high) {
+                            return
+                        }
+                    }
+                    // tu cay nen 0 nay den cay nen nay ko co cay nao gia dong cua < cay  nearestUnderEma50AndBBLow cua nen cao hon
+                    idexForSell = i
+                }
+            }
+        }
+
+        // if (idexForBuy > 0
+        //     //  && (idexForBuy< 30)
+        // ) {
+        //     console.log(coinName2 + " lowtime " + lowTimeRequest + " idx " + idexForBuy
+        //         + " highTime " + highTimeRequest + " idxTouch " + nearestUnderEma50AndBBLow
+
+        //     )
+        // }
+
+        if (idexForSell > 0
+            && (idexForSell < 30)
+        ) {
+            console.log(" =============== sell " + coinName2 + " lowtime " + lowTimeRequest + " idx " + idexForSell
+                + " highTime " + highTimeRequest + " idxTouch " + nearestOverEma50AndBBHigh
+
+            )
+
+            if (idexForBuy < 3) {
+                bot.sendMessage(chatId, coinName2 + " sell lowtime " + lowTimeRequest + " idx " + idexForSell
+                    + " highTime " + highTimeRequest + " idxTouch " + nearestOverEma50AndBBHigh)
+            }
+        }
+    }
+    catch (e) {
+        console.log("error 3 " + e + " " + coinName2)
+        console.error("Dòng lỗi:", e.stack);
+    }
+}
+
 
 
 const updatePrice = async (timeRequest) => {
@@ -707,6 +993,10 @@ const updatePrice = async (timeRequest) => {
                         await findRetestForBuy(coinName2, "1h", "15m", 4)
                         await findRetestForBuy(coinName2, "15m", "3m", 5)
                         await findRetestForBuy(coinName2, "30m", "5m", 6)
+
+                        await findRetestForSell(coinName2, "1h", "15m", 4)
+                        await findRetestForSell(coinName2, "15m", "3m", 5)
+                        await findRetestForSell(coinName2, "30m", "5m", 6)
                         // await findRetestForBuy(coinName2, "5m", "1m", 5)
                         // await findRetestForBuy(coinName2, "1h", "15m", 4)
                     }
