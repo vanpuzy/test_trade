@@ -752,6 +752,7 @@ const findRetestForSell = async (coinName2, highTimeRequest, lowTimeRequest, mul
 
         // tim cay nen ma nho hon ema50 va bb duoi, > ema89, 
 
+      // console.log(timeRequest + " " + coinName2 + " nearestEma50OverEma89 " + nearestEma50OverEma89)
 
         var nearestOverEma50AndBBHigh = -1
         var candleUnderBBUpBefore = -1
@@ -803,7 +804,7 @@ const findRetestForSell = async (coinName2, highTimeRequest, lowTimeRequest, mul
         }
 
 
-        // console.log(coinName2 + " time " + highTimeRequest + " candleAboveBBUpAfter " + candleAboveBBUpAfter)
+       //  console.log(coinName2 + " time " + highTimeRequest + " candleUnderBBUpBefore " + candleUnderBBUpBefore)
         if (nearestOverEma50AndBBHigh < 0)
             return
 
@@ -884,32 +885,12 @@ const findRetestForSell = async (coinName2, highTimeRequest, lowTimeRequest, mul
         // console.log(" firstTouchMidEma89 " + firstTouchMidEma89 + " Math.min(mid_nearestEma50UnderEma89, candleAboveBBUpAfter * mulCoeff) "+ Math.min(mid_nearestEma50UnderEma89, candleAboveBBUpAfter * mulCoeff))
 
         var idexForSell = -1
-        // if(hasCandleUnderMidEma89 == true)
-        // {
-        //     for(var i = 0; i < firstTouchMidEma89; i++)
-        //     {
-        //         if(isBullishEngulfing(mid_priceDatas[mid_closePrices.length-1-(i+1)],mid_priceDatas[mid_closePrices.length-1-i])
-        //         && (mid_priceDatas[mid_closePrices.length-1-i].close > mid_ema89[mid_ema89.length-1-i])
-        //         )
-        //         {
 
-        //             for(var j = i ; j < nearestUnderEma50AndBBLow* mulCoeff;j++)
-        //             {
-        //                 if(mid_priceDatas[mid_priceDatas.length-1-j].close < priceDatas[priceDatas.length-1-nearestUnderEma50AndBBLow].low)
-        //                 {
-        //                     return
-        //                 }
-        //             }
-        //             // tu cay nen 0 nay den cay nen nay ko co cay nao gia dong cua < cay  nearestUnderEma50AndBBLow cua nen cao hon
-        //             idexForBuy = i
-        //         }
-        //     }
-        // }
 
         if (candleUnderBBUpAfter < 0) {
             return
         }
-        //   console.log(coinName2 + " candleAboveBBUpAfter "+ candleAboveBBUpAfter)
+        //  console.log(coinName2 + " candleUnderBBUpAfter "+ candleUnderBBUpAfter)
         // if (hasCandleUnderMidEma89 == true)
         {
             for (var i = 0; i < candleUnderBBUpAfter * mulCoeff; i++) {
@@ -932,14 +913,14 @@ const findRetestForSell = async (coinName2, highTimeRequest, lowTimeRequest, mul
             }
         }
 
-        // if (idexForBuy > 0
-        //     //  && (idexForBuy< 30)
-        // ) {
-        //     console.log(coinName2 + " lowtime " + lowTimeRequest + " idx " + idexForBuy
-        //         + " highTime " + highTimeRequest + " idxTouch " + nearestUnderEma50AndBBLow
+        if (idexForSell > 0
+            //  && (idexForBuy< 30)
+        ) {
+            // console.log(coinName2 + " lowtime " + lowTimeRequest + " idx " + idexForSell
+            //     + " highTime " + highTimeRequest + " idxTouch " + nearestOverEma50AndBBHigh
 
-        //     )
-        // }
+            // )
+        }
 
         if (idexForSell > 0
             && (idexForSell < 30)
@@ -949,7 +930,7 @@ const findRetestForSell = async (coinName2, highTimeRequest, lowTimeRequest, mul
 
             )
 
-            if (idexForBuy < 3) {
+            if (idexForSell < 3) {
                 bot.sendMessage(chatId, coinName2 + " sell lowtime " + lowTimeRequest + " idx " + idexForSell
                     + " highTime " + highTimeRequest + " idxTouch " + nearestOverEma50AndBBHigh)
             }
