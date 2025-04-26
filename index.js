@@ -498,19 +498,17 @@ const findRetestForBuy = async (coinName2, highTimeRequest, lowTimeRequest, mulC
                         break
                     }
                     if ((priceDatas[priceDatas.length - 1 - j].close > bbResult[bbResult.length - 1 - j].upper)
-                     //   && (priceDatas[priceDatas.length - 1 - j].close >= priceDatas[priceDatas.length - 1 - candleAboveBBUpBefore].close)
+                        //   && (priceDatas[priceDatas.length - 1 - j].close >= priceDatas[priceDatas.length - 1 - candleAboveBBUpBefore].close)
                     ) {
                         candleAboveBBUpAfter = j
-                      
+
                     }
                 }
 
-                if( candleAboveBBUpBefore > 0)
-                {
-                    if(priceDatas[priceDatas.length - 1 - candleAboveBBUpBefore].close >= priceDatas[priceDatas.length - 1 - candleAboveBBUpBefore].close)
-                    {
+                if (candleAboveBBUpBefore > 0) {
+                    if (priceDatas[priceDatas.length - 1 - candleAboveBBUpBefore].close >= priceDatas[priceDatas.length - 1 - candleAboveBBUpBefore].close) {
 
-                    }else{
+                    } else {
                         return
                     }
                 }
@@ -519,16 +517,16 @@ const findRetestForBuy = async (coinName2, highTimeRequest, lowTimeRequest, mulC
         }
 
 
-       // console.log(coinName2 + " time " + highTimeRequest + " candleAboveBBUpAfter " + candleAboveBBUpAfter)
+        // console.log(coinName2 + " time " + highTimeRequest + " candleAboveBBUpAfter " + candleAboveBBUpAfter)
         if (nearestUnderEma50AndBBLow < 0)
             return
 
         // tim diem truoc va sau nearestUnderEma50AndBBLow ma cham bb
-         
 
-    
+
+
         var mid_priceDatas = await getCandlesticks(coinName2, lowTimeRequest);//await client.futuresCandles({ symbol: coinName2, limit: 1000, interval: timeRequest })
-        
+
         if (mid_priceDatas.length == 0) {
             return;
         }
@@ -597,7 +595,7 @@ const findRetestForBuy = async (coinName2, highTimeRequest, lowTimeRequest, mulC
         //     }
         // }
 
-       // console.log(" firstTouchMidEma89 " + firstTouchMidEma89 + " Math.min(mid_nearestEma50UnderEma89, candleAboveBBUpAfter * mulCoeff) "+ Math.min(mid_nearestEma50UnderEma89, candleAboveBBUpAfter * mulCoeff))
+        // console.log(" firstTouchMidEma89 " + firstTouchMidEma89 + " Math.min(mid_nearestEma50UnderEma89, candleAboveBBUpAfter * mulCoeff) "+ Math.min(mid_nearestEma50UnderEma89, candleAboveBBUpAfter * mulCoeff))
 
         var idexForBuy = -1
         // if(hasCandleUnderMidEma89 == true)
@@ -622,22 +620,21 @@ const findRetestForBuy = async (coinName2, highTimeRequest, lowTimeRequest, mulC
         //     }
         // }
 
-        if(candleAboveBBUpAfter < 0)
-        {
-            return 
+        if (candleAboveBBUpAfter < 0) {
+            return
         }
-     //   console.log(coinName2 + " candleAboveBBUpAfter "+ candleAboveBBUpAfter)
-       // if (hasCandleUnderMidEma89 == true)
-             {
+        //   console.log(coinName2 + " candleAboveBBUpAfter "+ candleAboveBBUpAfter)
+        // if (hasCandleUnderMidEma89 == true)
+        {
             for (var i = 0; i < candleAboveBBUpAfter * mulCoeff; i++) {
                 if (
-                //    isBullishEngulfing(mid_priceDatas[mid_closePrices.length - 1 - (i + 1)], mid_priceDatas[mid_closePrices.length - 1 - i])
-                 //   && 
+                    //    isBullishEngulfing(mid_priceDatas[mid_closePrices.length - 1 - (i + 1)], mid_priceDatas[mid_closePrices.length - 1 - i])
+                    //   && 
                     (mid_macdData2[mid_macdData2.length - 1 - i].MACD > mid_macdData2[mid_macdData2.length - 1 - i].signal)
-                    && (mid_macdData2[mid_macdData2.length - 1 - (i+1)].MACD < mid_macdData2[mid_macdData2.length - 1 - (i+1)].signal)
+                    && (mid_macdData2[mid_macdData2.length - 1 - (i + 1)].MACD < mid_macdData2[mid_macdData2.length - 1 - (i + 1)].signal)
                 ) {
 
-                  //  console.log(" mid_macdData2 cut " + i)
+                    //  console.log(" mid_macdData2 cut " + i)
                     for (var j = i; j < nearestUnderEma50AndBBLow * mulCoeff; j++) {
                         if (mid_priceDatas[mid_priceDatas.length - 1 - j].close < priceDatas[priceDatas.length - 1 - nearestUnderEma50AndBBLow].low) {
                             return
@@ -665,8 +662,11 @@ const findRetestForBuy = async (coinName2, highTimeRequest, lowTimeRequest, mulC
                 + " highTime " + highTimeRequest + " idxTouch " + nearestUnderEma50AndBBLow
 
             )
-            bot.sendMessage(chatId,coinName2 + " lowtime " + lowTimeRequest + " idx " + idexForBuy
-                + " highTime " + highTimeRequest+ " idxTouch " + nearestUnderEma50AndBBLow )
+            
+            if (idexForBuy < 3) {
+                bot.sendMessage(chatId, coinName2 + " lowtime " + lowTimeRequest + " idx " + idexForBuy
+                    + " highTime " + highTimeRequest + " idxTouch " + nearestUnderEma50AndBBLow)
+            }
         }
 
     }
@@ -695,7 +695,7 @@ const updatePrice = async (timeRequest) => {
             //  console.log("coinName  " + coinName2)
             //
             // 
-          //  var coinName2 = "CTSIUSDT"
+            //  var coinName2 = "CTSIUSDT"
 
             if (coinName2.includes("USDT") && (coinName2 != "COCOSUSDT") && (coinName2 != "BICOUSDT")) {
                 try {
@@ -703,14 +703,14 @@ const updatePrice = async (timeRequest) => {
                     //   console.log(" highestTimeRequest "+highestTimeRequest)
                     //    if (highestTimeRequest != "")
                     {
-                             
-                         await findRetestForBuy(coinName2, "1h", "15m", 4)
+
+                        await findRetestForBuy(coinName2, "1h", "15m", 4)
                         await findRetestForBuy(coinName2, "15m", "3m", 5)
                         await findRetestForBuy(coinName2, "30m", "5m", 6)
                         // await findRetestForBuy(coinName2, "5m", "1m", 5)
                         // await findRetestForBuy(coinName2, "1h", "15m", 4)
                     }
-                  //  break
+                    //  break
                     //  var test15m = await findRetest4hForBuy(coinName2, timeRequest)
                     //    var test15m = await find3TimeRedFutureForSell(coinName2, timeRequest, lowerTimeRequest, mulCoeff)
                     //    var test15m = await find3TimeRedFutureForSell(coinName2, timeRequest)
